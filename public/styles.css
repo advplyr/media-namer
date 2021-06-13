@@ -1,0 +1,250 @@
+@import url('https://fonts.googleapis.com/css?family=Muli:400,600');
+
+body {
+  background-color: hsl(0, 0%, 13%);
+  color: #FFF;
+  font-family: 'Noto Sans', sans-serif;
+  margin: 0px;
+}
+
+form,
+p {
+  margin: 0px;
+}
+
+.error--text {
+  color: rgb(200,22,22);
+}
+
+.success--text {
+  color: rgb(22,222,22);
+}
+
+.monospace {
+  font-family:monospace;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.px-1 {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.mediaitems-wrapper {
+  border:1px solid rgba(255,255,255,0.4);
+  height:0px;
+  overflow:hidden;
+  transition: all 0.2s ease-in-out;
+}
+
+.file-row-wrapper {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 5px;
+}
+
+.childitems-wrapper {
+  transition: all 0.2s ease-in-out;
+  overflow:hidden;
+  height: 0px;
+}
+
+.even-row {
+  background-color: rgba(255,255,255,0.075);
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+}
+
+.icon-dir,
+.icon-file {
+  height: 26px;
+  width: 26px;
+}
+
+.icon-dir {
+  color: #f5f7a6;
+}
+
+.icon-small {
+  height: 22px;
+  width: 22px;
+}
+
+.icon-xs {
+  height: 16px;
+  width: 16px;
+}
+
+button {
+  font-size: 14px;
+  font-family: monospace;
+  background: none;
+  border: 1px solid gray;
+  border-radius: 2px;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 9px 5px;
+  cursor: pointer;
+}
+
+button:disabled {
+  border-color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.6);
+  cursor:not-allowed;
+}
+
+button:hover:not(:disabled) {
+  transition: all 0.1s ease-in-out;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/*
+=====
+RESET STYLES
+=====
+*/
+
+.field__input {
+  --uiFieldPlaceholderColor: var(--fieldPlaceholderColor, #767676);
+
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  font-family: Muli;
+  font-size: 14px;
+  color:rgba(255, 255, 255, 0.85);
+}
+
+.field__input:focus::-webkit-input-placeholder {
+  color: var(--uiFieldPlaceholderColor);
+}
+
+.field__input:focus::-moz-placeholder {
+  color: var(--uiFieldPlaceholderColor);
+}
+
+/*
+=====
+CORE STYLES
+=====
+*/
+
+.field {
+  --uiFieldBorderWidth: var(--fieldBorderWidth, 1px);
+  --uiFieldPaddingRight: var(--fieldPaddingRight, 0rem);
+  --uiFieldPaddingLeft: var(--fieldPaddingLeft, 0rem);
+  --uiFieldBorderColorActive: var(--fieldBorderColorActive, rgba(22, 22, 22, 1));
+
+  display: var(--fieldDisplay, inline-flex);
+  position: relative;
+  font-size: var(--fieldFontSize, 0.8rem);
+}
+
+.field__input {
+  box-sizing: border-box;
+  width: var(--fieldWidth, 100%);
+  /* height: var(--fieldHeight, 3rem); */
+  padding: var(--fieldPaddingTop, 1rem) var(--uiFieldPaddingRight) var(--fieldPaddingBottom, 0.1rem) var(--uiFieldPaddingLeft);
+  border-bottom: var(--uiFieldBorderWidth) solid var(--fieldBorderColor, rgba(0, 0, 0, .25));
+}
+
+.field__input:focus {
+  outline: none;
+}
+
+.field__input::-webkit-input-placeholder {
+  opacity: 0;
+  transition: opacity .2s ease-out;
+}
+
+.field__input::-moz-placeholder {
+  opacity: 0;
+  transition: opacity .2s ease-out;
+}
+
+.field__input:focus::-webkit-input-placeholder {
+  opacity: 1;
+  transition-delay: .2s;
+}
+
+.field__input:focus::-moz-placeholder {
+  opacity: 1;
+  transition-delay: .2s;
+}
+
+.field__label-wrap {
+  box-sizing: border-box;
+  pointer-events: none;
+  cursor: text;
+
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.field__label-wrap::after {
+  content: "";
+  box-sizing: border-box;
+  width: 100%;
+  height: 0;
+  opacity: 0;
+
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.field__input:focus~.field__label-wrap::after {
+  opacity: 1;
+}
+
+.field__label {
+  position: absolute;
+  left: var(--uiFieldPaddingLeft);
+  top: calc(50% - .1em);
+
+  line-height: 1;
+  font-size: var(--fieldHintFontSize, inherit);
+
+  color: rgba(255, 255, 255, 0.6);
+  /* transition: top .2s cubic-bezier(0.9, -0.15, 0.1, 1.15), opacity .2s ease-out, font-size .2s ease-out; */
+  transition: all .2s ease-in-out;
+  will-change: bottom, opacity, font-size;
+}
+
+.field__input:focus~.field__label-wrap .field__label,
+.field__input:not(:placeholder-shown)~.field__label-wrap .field__label {
+  --fieldHintFontSize: var(--fieldHintFontSizeFocused, .6rem);
+  color: rgba(255, 255, 255, 0.4);
+  top: var(--fieldHintTopHover, .25rem);
+}
+
+.field .field__label-wrap::after {
+  border-bottom: var(--uiFieldBorderWidth) solid var(--uiFieldBorderColorActive);
+  transition: opacity .2s ease-out;
+  will-change: opacity;
+}
+
+.field {
+  --fieldBorderColor: #fafff5;
+  --fieldBorderColorActive: #d0f7a6;
+}

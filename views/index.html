@@ -1,0 +1,300 @@
+<html>
+
+<head>
+  <title>Media Namer</title>
+  <link rel="stylesheet" type="text/css" href="styles.css">
+  <script src="/dom-builder.js" type="text/javascript"></script>
+</head>
+
+<body>
+  <div class="row" style="background-color:rgba(255,255,255,0.05);padding:0px 20px;border-bottom:1px solid #FFFFFF22;">
+    <h1>Media Namer</h1>
+    <div class="spacer"></div>
+    <button class="row" onclick="refresh()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon-xs" style="margin-right:8px;" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+      Refresh</button>
+  </div>
+
+  <div style="padding:30px">
+    {{@foreach(it.media) => index, mediaobj}}
+    <div class="row" style="margin-bottom:5px;cursor:pointer;" onclick="showMedia('{{mediaobj.type}}')">
+      <h2 style="text-transform:capitalize;margin-right:5px;">{{mediaobj.type}}</h2>
+      <span>({{mediaobj.files.length}})</span>
+      <div class="spacer"></div>
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon-dir" fill="none" viewBox="0 0 24 24" stroke="rgb(22,222,22)"
+        style="margin-left:10px;cursor:pointer;" onclick="showMedia('{{mediaobj.type}}')">
+        <path id="mediaarrow-{{mediaobj.type}}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
+      </svg>
+    </div>
+
+    <div id="mediaitems-{{mediaobj.type}}" class="mediaitems-wrapper">
+      <div id="mediaitems-inner-{{mediaobj.type}}">
+        {{@foreach(mediaobj.files) => file_index, file}}
+        <div class="file-row-wrapper {{@if(file_index%2===0)}}even-row{{/if}}">
+          <div id="filerow-{{file.id}}" class="file-row">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-{{@if(file.dir)}}dir{{#else}}file{{/if}}"
+              stroke="currentColor" fill="none" viewBox="0 0 24 24">
+              {{@if(file.dir)}}
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+              {{#else}}
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              {{/if}}
+            </svg>
+            <p style="padding-left:5px;">{{file.basename}}</p>
+
+            {{@if(!file.dir)}}
+            <span class="monospace" style="margin-left:8px;">
+              [{{file.prettyBytes}}]
+            </span>
+            {{/if}}
+
+            {{@if(file.children)}}
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon-xs" fill="none" viewBox="0 0 24 24"
+              stroke="rgb(22,222,22)" style="margin-left:10px;cursor:pointer;" onclick="showChildren('{{file.id}}')">
+              <path id="childarrow-{{file.id}}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
+            </svg>
+            {{/if}}
+
+            <div style="flex-grow:1"></div>
+
+            <label id="lookupimdb-wrapper-{{file.id}}" class="field" style="margin-right: 5px;width:100px;">
+              <input id="lookupimdb-{{file.id}}" class="field__input" placeholder="e.g. tt346234">
+              <span class="field__label-wrap">
+                {{@if(mediaobj.type === 'books' || mediaobj.type === 'audiobooks')}}
+                <span class="field__label">Isbn</span>
+                {{#else}}
+                <span class="field__label">Imdb Id</span>
+                {{/if}}
+              </span>
+            </label>
+
+            <button id="lookupbtn-{{file.id}}" onclick="lookup('{{file.id}}')">Lookup</button>
+          </div>
+          {{@if(file.children)}}
+          <div id="mediachildren-{{file.id}}" class="childitems-wrapper">
+            <div id="mediachildren-inner-{{file.id}}">
+              {{@foreach(file.children) => child_index, child_file}}
+              <div style="display:flex;padding-top:10px;padding-left:15px;">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon-small" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  {{@if(child_file.filetype === 'video')}}
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                  {{/if}}
+                  {{@if(child_file.filetype === 'sub')}}
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                  {{/if}}
+                  {{@if(child_file.filetype === 'info')}}
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  {{/if}}
+                  {{@if(child_file.filetype === 'audio')}}
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                  {{/if}}
+                </svg>
+                <p style="padding-left:10px;font-size:14px;">{{child_file.basename}}</p>
+                <span class="monospace" style="margin-left:8px;">
+                  [{{child_file.prettyBytes}}]
+                </span>
+              </div>
+              {{/foreach}}
+            </div>
+          </div>
+          {{/if}}
+          <div id="media-{{file.id}}"></div>
+        </div>
+        {{/foreach}}
+      </div>
+    </div>
+    {{/foreach}}
+
+    {{@if(it.media.length === 0)}}
+    <h4>No Media</h4>
+    {{/if}}
+  </div>
+
+  <script>
+    const arrowUp = 'M5 11l7-7 7 7M5 19l7-7 7 7'
+    const arrowDown = 'M19 13l-7 7-7-7m14-8l-7 7-7-7'
+
+    function showMedia(mediatype) {
+      var mediaitems = document.getElementById(`mediaitems-${mediatype}`)
+
+      var isExpanded = mediaitems.clientHeight > 0
+      if (!isExpanded) {
+        var inner = document.getElementById(`mediaitems-inner-${mediatype}`)
+        mediaitems.style.height = inner.clientHeight + 'px'
+      } else {
+        mediaitems.style.height = '0px'
+      }
+
+      var mediaarrow = document.getElementById(`mediaarrow-${mediatype}`)
+      var newPath = isExpanded ? arrowDown : arrowUp
+      mediaarrow.setAttribute('d', newPath)
+    }
+
+    function showChildren(file_id) {
+      var parent = document.getElementById(`mediachildren-${file_id}`)
+
+      var mediatype = file_id.split('_')[0]
+      var itemsInner = document.getElementById(`mediaitems-inner-${mediatype}`)
+      var itemsWrapper = document.getElementById(`mediaitems-${mediatype}`)
+      var itemsInnerHeight = itemsInner.clientHeight
+
+      var inner = document.getElementById(`mediachildren-inner-${file_id}`)
+      var innerHeight = inner.clientHeight
+
+      var isExpanded = parent.clientHeight > 0
+      if (!isExpanded) {
+        parent.style.height = innerHeight + 'px'
+        itemsWrapper.style.height = itemsInnerHeight + innerHeight + 'px'
+      } else {
+        parent.style.height = '0px'
+        itemsWrapper.style.height = itemsInnerHeight - innerHeight + 'px'
+      }
+
+      var arrow = document.getElementById('childarrow-' + file_id)
+      var newPath = isExpanded ? arrowDown : arrowUp
+      arrow.setAttribute('d', newPath)
+    }
+
+    function refresh() {
+      var payload = {
+        headers: {
+          'content-type': 'application/json;charset=UTF-8'
+        },
+        body: null,
+        method: 'POST'
+      }
+      fetch('/refresh', payload).then(() => {
+        window.location.href = window.location.href
+      })
+    }
+
+    function rename(file_id) {
+      var renamebtn = document.getElementById(`renamebtn-${file_id}`)
+      if (renamebtn) {
+        renamebtn.innerText = 'Processing...'
+        renamebtn.setAttribute('disabled', true)
+      }
+      var resetbtn = document.getElementById(`resetbtn-${file_id}`)
+      resetbtn.remove()
+
+      console.log('Rename', file_id)
+      var mediatype = file_id.split('_')[0]
+
+      var newtitleinput = document.getElementById(`newtitle-${file_id}`)
+      var title = newtitleinput.value
+
+      var body = {
+        media_type: mediatype,
+        file_id,
+        title,
+      }
+
+
+      if (mediatype === 'movies') {
+        var variantinput = document.getElementById(`variant-${file_id}`)
+        var variant = variantinput.value
+
+        var existingvariantinput = document.getElementById(`existingvariant-${file_id}`)
+        var existingvariant = existingvariantinput.value
+
+        body.variant = variant
+        body.existingvariant = existingvariant
+      } else if (mediatype === 'series') {
+        var episodetitleinput = document.getElementById(`episodetitle-${file_id}`)
+        body.episode_title = episodetitleinput.value
+        var seasoninput = document.getElementById(`season-${file_id}`)
+        body.season = seasoninput.value
+        var episodeinput = document.getElementById(`episode-${file_id}`)
+        body.episode = episodeinput.value
+      } else if (mediatype === 'books' || mediatype === 'audiobooks') {
+        var authorinput = document.getElementById(`authors-${file_id}`)
+        body.authors = authorinput.value
+      }
+
+      var payload = {
+        headers: {
+          'content-type': 'application/json;charset=UTF-8'
+        },
+        body: JSON.stringify(body),
+        method: 'POST'
+      }
+      fetch('/rename', payload).then((response) => response.json()).then((data) => {
+        console.log('Rename response', data)
+
+        var findmediacontainer = document.getElementById(`lookupresponse-${file_id}`)
+        if (findmediacontainer) {
+          var itemsWrapper = document.getElementById(`mediaitems-${mediatype}`)
+          var itemsInner = document.getElementById(`mediaitems-inner-${mediatype}`)
+          itemsWrapper.style.height = itemsInner.clientHeight - findmediacontainer.clientHeight + 'px'
+          findmediacontainer.remove()
+        }
+
+        var parent = document.getElementById(`media-${file_id}`)
+
+        var resulttxt = document.createElement('div')
+        resulttxt.style.padding = '8px'
+        resulttxt.style.marginTop = '8px'
+        resulttxt.style.border = '1px dashed rgba(255,255,255,0.08)'
+
+        var resulthtml = ''
+
+        if (data.filesFailed.length) {
+          resulthtml += '<strong>Failed</strong><br>'
+          data.filesFailed.forEach((failPay) => {
+            resulthtml += `<span class="monospace">${failPay.file.basename}</span><span class="bold px-1">=></span><span class="monospace">${failPay.file.newname}</span> - <span class="error--text">${failPay.reason}</span><br>`
+          })
+          resulthtml += '<br>'
+        }
+        if (data.filesSucceeded.length) {
+          resulthtml += '<strong class="success--text">Succeeded</strong><br>'
+          data.filesSucceeded.forEach((file) => {
+            resulthtml += `<span class="monospace">${file.basename}</span><span class="bold px-1">=></span><span class="monospace">${file.newname}</span><br>`
+          })
+        }
+        resulttxt.innerHTML = resulthtml
+
+        parent.appendChild(resulttxt)
+
+        var itemsWrapper = document.getElementById(`mediaitems-${mediatype}`)
+        var itemsInner = document.getElementById(`mediaitems-inner-${mediatype}`)
+        itemsWrapper.style.height = itemsInner.clientHeight + 'px'
+      })
+    }
+
+    function lookup(file_id) {
+      console.log('Lookup file', file_id)
+
+      var lookupimdb = document.getElementById(`lookupimdb-${file_id}`).value
+      var imdb_id = lookupimdb && lookupimdb.length ? lookupimdb : null
+
+      var payload = {
+        headers: {
+          'content-type': 'application/json;charset=UTF-8'
+        },
+        body: JSON.stringify({ file_id, imdb_id }),
+        method: 'POST'
+      }
+      fetch('/lookup', payload).then((response) => response.json()).then((data) => {
+        console.log('lookup response', data)
+        buildLookupResponse(data, file_id)
+      }).catch((error) => {
+        console.error('FAILED', error)
+      })
+    }
+  </script>
+</body>
+
+</html>
