@@ -17,7 +17,7 @@ process.env.OMDB_API_KEY
 
 ## Docker
 
-https://hub.docker.com/r/mcoop320/media-namer/
+https://hub.docker.com/r/advplyr/media-namer/
 
 Built to primarily run as a docker container in my Unraid server.
 
