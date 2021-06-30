@@ -79,9 +79,11 @@ class MovieRenamer {
     }
   }
 
-  async rename(fileObj, outputPath, fileTitle, fileVariant, existingFileVariant) {
-    var newDirectoryPath = Path.join(outputPath, 'Movies', fileTitle)
-    var successful = await createDirectory(outputPath, 'Movies', fileTitle)
+  async rename(fileObj, outputPath, mediaType, fileTitle, fileVariant, existingFileVariant) {
+    var mediaTypeTitle = mediaType.substr(0, 1).toUpperCase() + mediaType.substr(1)
+    var newDirectoryPath = Path.join(outputPath, mediaTypeTitle, fileTitle)
+    console.log(mediaType, 'Rename Directory', newDirectoryPath)
+    var successful = await createDirectory(outputPath, mediaTypeTitle, fileTitle)
     if (!successful) {
       return false
     }

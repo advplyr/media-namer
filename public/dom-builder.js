@@ -71,7 +71,7 @@ function buildLookupResponse(data, file_id) {
     var box = document.createElement('div')
 
 
-    if (data.media_type === 'movies') {
+    if (data.media_type === 'movies' || data.media_type === 'documentaries') {
       var titleContainer = buildInput(`newtitle-${file_id}`, 'Title', `${data.media.title} (${data.media.year})`)
       box.appendChild(titleContainer)
       var variantContainer = buildInput(`variant-${file_id}`, 'Variant')

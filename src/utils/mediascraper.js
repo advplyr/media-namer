@@ -1,6 +1,6 @@
 var fs = require('fs').promises
 var ptt = require('parse-torrent-title')
-var { prettyBytes } = require('.')
+var { prettyBytes, stringHash } = require('.')
 var { fetchMediaFilesRecursive, fetchTopLevelFiles } = require('./fileHelpers')
 
 async function scrapeExisting(path) {
@@ -11,7 +11,7 @@ module.exports.scrapeExisting = scrapeExisting
 
 function parseFilename(filename, mediatype) {
   var parsedFilename = ptt.parse(filename)
-  if (mediatype === 'movies' && parsedFilename.title && parsedFilename.year) {
+  if ((mediatype === 'movies' || mediatype === 'documentaries') && parsedFilename.title && parsedFilename.year) {
     return parsedFilename
   } else if (mediatype === 'series' && parsedFilename.season !== undefined && parsedFilename.episode !== undefined) {
     return parsedFilename
@@ -21,9 +21,8 @@ function parseFilename(filename, mediatype) {
   return null
 }
 
-async function scrape(path, mediatype, index = 0) {
+async function scrape(path, mediatype) {
   var topLevelFiles = await fetchTopLevelFiles(path)
-  // console.log('Top level files', topLevelFiles, mediatype)
   var mediaObjects = []
 
   for (let i = 0; i < topLevelFiles.length; i++) {
@@ -34,7 +33,9 @@ async function scrape(path, mediatype, index = 0) {
       file.mediatype = mediatype
       var size = 0
       if (file.dir) {
-        file.children = await fetchMediaFilesRecursive(file.path, mediatype)
+        var { files, invalid_files } = await fetchMediaFilesRecursive(file.path, mediatype)
+        file.children = files
+        file.invalid_files = invalid_files
         file.children.forEach((cf) => size += cf.size)
       } else {
         var stat = await fs.lstat(file.path)
@@ -42,12 +43,12 @@ async function scrape(path, mediatype, index = 0) {
       }
       file.size = size
       file.prettyBytes = prettyBytes(size)
-      file.id = `${mediatype}_${index++}`
+      file.id = `${mediatype}_${stringHash(file.path)}`
+      console.log('File Id', file.id)
       mediaObjects.push(file)
     } else if (file.dir) {
-      var dirMediaObjects = await scrape(file.path, mediatype, index)
+      var dirMediaObjects = await scrape(file.path, mediatype)
       mediaObjects = mediaObjects.concat(dirMediaObjects)
-      index += mediaObjects.length
     }
   }
 
@@ -57,26 +58,27 @@ module.exports.scrape = scrape
 
 async function findMediaDirectories(path) {
   var topLevelFiles = await fetchTopLevelFiles(path)
+
+  const acceptableDirnames = {
+    movies: 'movies',
+    documentaries: 'documentaries',
+    series: 'series',
+    shows: 'series',
+    'tv shows': 'series',
+    'tv series': 'series',
+    books: 'books',
+    audiobooks: 'audiobooks'
+  }
+
   var mediaDirs = {}
 
   topLevelFiles.forEach((tlf) => {
     var dirname = tlf.basename.toLowerCase()
-    if (tlf.dir) {
-      if (dirname === 'movies') {
-        mediaDirs['movies'] = {
-          path: tlf.path,
-          type: 'movies'
-        }
-      } else if (dirname === 'series' || dirname === 'shows' || dirname === 'tv shows') {
-        mediaDirs['series'] = {
-          path: tlf.path,
-          type: 'series'
-        }
-      } else if (dirname === 'books' || dirname === 'audiobooks') {
-        mediaDirs[dirname] = {
-          path: tlf.path,
-          type: dirname
-        }
+    if (tlf.dir && acceptableDirnames[dirname]) {
+      var mediaType = acceptableDirnames[dirname]
+      mediaDirs[mediaType] = {
+        type: mediaType,
+        path: tlf.path
       }
     }
   })

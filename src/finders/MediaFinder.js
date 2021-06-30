@@ -11,7 +11,7 @@ class MediaFinder {
       mediaData = await BookFinder.find(fileObj, identifier)
     } else if (media_type === 'series') {
       mediaData = await SeriesFinder.find(fileObj, identifier)
-    } else if (media_type === 'movies') {
+    } else if (media_type === 'movies' || media_type === 'documentaries') {
       mediaData = await MovieFinder.find(fileObj, identifier)
     }
     if (!mediaData) {

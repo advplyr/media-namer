@@ -8,15 +8,17 @@ class Renamer {
     this.filesProcessing = []
   }
 
-  async rename(req, res, media) {
+  async rename(req, media) {
     var media_type = req.body.media_type
     var file_id = req.body.file_id
 
     const sendError = (msg) => {
       this.filesProcessing = this.filesProcessing.filter(fid => fid !== file_id)
-      res.json({
+      return {
+        file_id,
+        media_type,
         error: msg
-      })
+      }
     }
 
     if (this.filesProcessing.includes(file_id)) {
@@ -33,13 +35,13 @@ class Renamer {
     var title = req.body.title
     var renameResult = null
 
-    if (media_type === 'movies') {
+    if (media_type === 'movies' || media_type === 'documentaries') {
       var fileVariant = req.body.variant
       var existingFileVariant = req.body.existingvariant
       if (!fileVariant.length || !fileVariant.trim().length) fileVariant = false
       if (!existingFileVariant.length || !existingFileVariant.trim().length) existingFileVariant = false
 
-      renameResult = await MovieRenamer.rename(fileObj, this.OutputPath, title, fileVariant, existingFileVariant)
+      renameResult = await MovieRenamer.rename(fileObj, this.OutputPath, media_type, title, fileVariant, existingFileVariant)
     } else if (media_type === 'series') {
       var episode_title = req.body.episode_title
       var season = req.body.season
@@ -74,11 +76,14 @@ class Renamer {
     }
 
     this.filesProcessing = this.filesProcessing.filter(fid => fid !== file_id)
-    res.json({
+
+    return {
       success: true,
+      file_id,
+      media_type,
       filesSucceeded,
       filesFailed
-    })
+    }
   }
 }
 module.exports = new Renamer()

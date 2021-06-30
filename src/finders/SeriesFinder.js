@@ -11,6 +11,8 @@ class MovieFinder {
     var season = parsed.season
     var episode = parsed.episode
 
+    console.log(identifier, 'SeriesFinder parsed', parsed)
+
     if (identifier) {
       var media = await omdb.getImdbData(identifier)
       if (!media) {
@@ -20,6 +22,12 @@ class MovieFinder {
       }
 
       var episodeData = await omdb.getEpisodeInfo(identifier, season, episode)
+      if (!episodeData) {
+        console.error('Episode not found', identifier, season, episode)
+        return {
+          error: 'Episode not found'
+        }
+      }
       media.episode_title = episodeData.title
       media.episode_poster = episodeData.image
       media.episode_year = episodeData.year

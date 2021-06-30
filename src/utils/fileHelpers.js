@@ -9,7 +9,7 @@ const SUB_FORMATS = ['idx', 'sub', 'srt']
 const AUDIO_FORMATS = ['mp3', 'm4b']
 const EBOOK_FORMATS = ['epub', 'pdf']
 const IMAGE_FORMATS = ['png', 'jpg', 'jpeg']
-const MIN_VIDEO_SIZE = 350 * 1000000
+const MIN_VIDEO_SIZE = 200 * 1000000
 
 function getCollectionFileType(ext) {
   var ftype = ext
@@ -40,12 +40,14 @@ async function fetchMediaFilesRecursive(path, mediatype) {
   if (!stat) return null
   var isDir = stat.isDirectory()
   var files = []
+
   if (isDir) {
     files = await fetchAllFilesInDir(path)
   } else {
     files = [path]
   }
   var fileObjs = []
+  var invalid_files = []
   for (let i = 0; i < files.length; i++) {
     var ext = Path.extname(files[i]).substr(1).toLowerCase()
     var filetype = getCollectionFileType(ext)
@@ -65,11 +67,26 @@ async function fetchMediaFilesRecursive(path, mediatype) {
             ext: ext,
             filetype
           })
+        } else {
+          invalid_files.push({
+            path: files[i],
+            basename: Path.basename(files[i]),
+            ext
+          })
         }
       }
+    } else {
+      invalid_files.push({
+        path: files[i],
+        basename: Path.basename(files[i]),
+        ext
+      })
     }
   }
-  return fileObjs
+  return {
+    files: fileObjs,
+    invalid_files
+  }
 }
 module.exports.fetchMediaFilesRecursive = fetchMediaFilesRecursive
 
@@ -128,7 +145,6 @@ async function createDirectory(...pieces) {
 
       path_so_far = _path
     }
-    console.log('Done', path_so_far)
     return true
   } catch (err) {
     console.error('Failed to mkdir', err)

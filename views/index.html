@@ -126,6 +126,7 @@
   <script>
     const arrowUp = 'M5 11l7-7 7 7M5 19l7-7 7 7'
     const arrowDown = 'M19 13l-7 7-7-7m14-8l-7 7-7-7'
+    var pendingRenames = []
 
     function showMedia(mediatype) {
       var mediaitems = document.getElementById(`mediaitems-${mediatype}`)
@@ -203,7 +204,7 @@
       }
 
 
-      if (mediatype === 'movies') {
+      if (mediatype === 'movies' || mediatype === 'documentaries') {
         var variantinput = document.getElementById(`variant-${file_id}`)
         var variant = variantinput.value
 
@@ -231,46 +232,9 @@
         body: JSON.stringify(body),
         method: 'POST'
       }
+      pendingRenames.push(file_id)
       fetch('/rename', payload).then((response) => response.json()).then((data) => {
         console.log('Rename response', data)
-
-        var findmediacontainer = document.getElementById(`lookupresponse-${file_id}`)
-        if (findmediacontainer) {
-          var itemsWrapper = document.getElementById(`mediaitems-${mediatype}`)
-          var itemsInner = document.getElementById(`mediaitems-inner-${mediatype}`)
-          itemsWrapper.style.height = itemsInner.clientHeight - findmediacontainer.clientHeight + 'px'
-          findmediacontainer.remove()
-        }
-
-        var parent = document.getElementById(`media-${file_id}`)
-
-        var resulttxt = document.createElement('div')
-        resulttxt.style.padding = '8px'
-        resulttxt.style.marginTop = '8px'
-        resulttxt.style.border = '1px dashed rgba(255,255,255,0.08)'
-
-        var resulthtml = ''
-
-        if (data.filesFailed.length) {
-          resulthtml += '<strong>Failed</strong><br>'
-          data.filesFailed.forEach((failPay) => {
-            resulthtml += `<span class="monospace">${failPay.file.basename}</span><span class="bold px-1">=></span><span class="monospace">${failPay.file.newname}</span> - <span class="error--text">${failPay.reason}</span><br>`
-          })
-          resulthtml += '<br>'
-        }
-        if (data.filesSucceeded.length) {
-          resulthtml += '<strong class="success--text">Succeeded</strong><br>'
-          data.filesSucceeded.forEach((file) => {
-            resulthtml += `<span class="monospace">${file.basename}</span><span class="bold px-1">=></span><span class="monospace">${file.newname}</span><br>`
-          })
-        }
-        resulttxt.innerHTML = resulthtml
-
-        parent.appendChild(resulttxt)
-
-        var itemsWrapper = document.getElementById(`mediaitems-${mediatype}`)
-        var itemsInner = document.getElementById(`mediaitems-inner-${mediatype}`)
-        itemsWrapper.style.height = itemsInner.clientHeight + 'px'
       })
     }
 
@@ -294,6 +258,79 @@
         console.error('FAILED', error)
       })
     }
+
+    function handleRenameComplete(data) {
+      pendingRenames = pendingRenames.filter(r => r !== data.file_id)
+      var { file_id, media_type } = data
+
+      var findmediacontainer = document.getElementById(`lookupresponse-${file_id}`)
+      if (findmediacontainer) {
+        var itemsWrapper = document.getElementById(`mediaitems-${media_type}`)
+        var itemsInner = document.getElementById(`mediaitems-inner-${media_type}`)
+        itemsWrapper.style.height = itemsInner.clientHeight - findmediacontainer.clientHeight + 'px'
+        findmediacontainer.remove()
+      }
+
+      var parent = document.getElementById(`media-${file_id}`)
+
+      var resulttxt = document.createElement('div')
+      resulttxt.style.padding = '8px'
+      resulttxt.style.marginTop = '8px'
+      resulttxt.style.border = '1px dashed rgba(255,255,255,0.08)'
+
+      var resulthtml = ''
+
+      if (data.filesFailed.length) {
+        resulthtml += '<strong>Failed</strong><br>'
+        data.filesFailed.forEach((failPay) => {
+          resulthtml += `<span class="monospace">${failPay.file.basename}</span><span class="bold px-1">=></span><span class="monospace">${failPay.file.newname}</span> - <span class="error--text">${failPay.reason}</span><br>`
+        })
+        resulthtml += '<br>'
+      }
+      if (data.filesSucceeded.length) {
+        resulthtml += '<strong class="success--text">Succeeded</strong><br>'
+        data.filesSucceeded.forEach((file) => {
+          resulthtml += `<span class="monospace">${file.basename}</span><span class="bold px-1">=></span><span class="monospace">${file.newname}</span><br>`
+        })
+      }
+      resulttxt.innerHTML = resulthtml
+
+      parent.appendChild(resulttxt)
+
+      var itemsWrapper = document.getElementById(`mediaitems-${media_type}`)
+      var itemsInner = document.getElementById(`mediaitems-inner-${media_type}`)
+      itemsWrapper.style.height = itemsInner.clientHeight + 'px'
+    }
+
+    var serverEvents = new EventSource('/events')
+    serverEvents.addEventListener('open', (ev) => {
+      console.log('Server events open', ev)
+    })
+    serverEvents.addEventListener('error', (ev) => {
+      console.error('Server events error', ev)
+    })
+    serverEvents.addEventListener('message', function (event) {
+      try {
+        var eventJson = JSON.parse(event.data)
+        console.log('Event', eventJson)
+        if (eventJson.type === 'rename') {
+          handleRenameComplete(eventJson.data)
+        } else if (eventJson.type === 'info') {
+          if (pendingRenames.length && eventJson.data.completedRenames.length) {
+            eventJson.data.completedRenames.forEach((result) => {
+              if (pendingRenames.includes(result.file_id)) {
+                console.log('Update completed rename', result)
+                handleRenameComplete(result)
+              }
+            })
+          }
+        } else {
+          console.log('Invalid event type', eventJson)
+        }
+      } catch (err) {
+        console.error('Invalid', err)
+      }
+    })
   </script>
 </body>
 

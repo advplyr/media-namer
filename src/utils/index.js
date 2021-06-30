@@ -64,3 +64,14 @@ function prettyBytes(bytes) {
   return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i]
 }
 module.exports.prettyBytes = prettyBytes
+
+module.exports.stringHash = (str) => {
+  var hash = 0, i, chr
+  if (str.length === 0) return hash
+  for (i = 0; i < str.length; i++) {
+    chr = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + chr
+    hash |= 0 // Convert to 32bit integer
+  }
+  return (hash + 2147483647 + 1).toString(16)
+}

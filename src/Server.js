@@ -10,14 +10,16 @@ class Server {
     this.FilePath = null
     this.OutputPath = null
 
+    this.clients = {}
+    this.completedRenames = []
+    this.filesRenaming = []
     this.media = []
   }
 
   async loadFiles() {
     this.media = await mediascraper.findMediaDirectories(this.FilePath)
     for (const mediatype in this.media) {
-      var mediadir_path = this.media[mediatype].path
-      this.media[mediatype].files = await mediascraper.scrape(mediadir_path, mediatype)
+      this.media[mediatype].files = await mediascraper.scrape(this.media[mediatype].path, mediatype)
     }
   }
 
@@ -45,9 +47,63 @@ class Server {
 
     app.post('/refresh', this.refresh.bind(this))
 
-    app.post('/rename', (req, res) => Renamer.rename(req, res, this.media))
+    app.post('/check', async (req, res) => {
+      console.log('Check for existing file')
+    })
+
+    app.post('/rename', async (req, res) => {
+      var fileId = req.body.file_id
+      if (this.filesRenaming.includes(fileId)) {
+        return res.json({ error: 'Already renaming file' })
+      }
+      var start = Date.now()
+      this.filesRenaming.push(fileId)
+
+      var requestIp = this.getRequestIp(req)
+      var client = this.clients[requestIp]
+      if (!client) {
+        console.error('Client not established - will not send completion event')
+      }
+      res.json({
+        client: client ? client.id : null
+      })
+      try {
+        var renameResult = await Renamer.rename(req, this.media, client)
+        var elapsed = Date.now() - start
+        var elapsedSeconds = (elapsed / 1000).toFixed(1)
+        console.log('Rename complete in', elapsedSeconds, 'seconds')
+        console.log('Rename result', renameResult)
+        this.filesRenaming = this.filesRenaming.filter(f => f !== fileId)
+        if (!renameResult.error) {
+          this.completedRenames.push(renameResult)
+        }
+        if (client) {
+          console.log('Writing rename result to client', client.id)
+          var payload = {
+            type: 'rename',
+            data: renameResult
+          }
+          client.response.write(`data: ${JSON.stringify(payload)}\n\n`)
+        }
+      } catch (error) {
+        console.error('Rename crashed', error)
+        this.filesRenaming = this.filesRenaming.filter(f => f !== fileId)
+        if (client) {
+          console.log('[CRASH] Writing rename result to client', client.id)
+          var payload = {
+            type: 'rename',
+            data: {
+              error: 'Rename crashed'
+            }
+          }
+          client.response.write(`data: ${JSON.stringify(payload)}\n\n`)
+        }
+      }
+    })
 
     app.post('/lookup', this.lookup.bind(this))
+
+    app.get('/events', this.handleClientEvent.bind(this))
 
     app.listen(PORT, HOST)
     console.log(`Running on http://${HOST}:${PORT}`)
@@ -83,6 +139,43 @@ class Server {
     }
     console.log('Media', result)
     res.json(result)
+  }
+
+  getRequestIp(req) {
+    return (typeof req.headers['x-forwarded-for'] === 'string' && req.headers['x-forwarded-for'].split(',').shift()) || req.connection.remoteAddress
+  }
+
+  handleClientEvent(req, res) {
+    const headers = {
+      'Content-Type': 'text/event-stream',
+      'Connection': 'keep-alive',
+      'Cache-Control': 'no-cache'
+    }
+    res.writeHead(200, headers)
+
+    const requestIp = this.getRequestIp(req) || 'unknown'
+    if (!this.clients[requestIp]) {
+      this.clients[requestIp] = {
+        id: requestIp,
+        response: res
+      }
+      console.log(`Client ${requestIp} Connected`)
+    } else {
+      this.clients[requestIp].response = res
+    }
+
+    req.on('close', () => {
+      console.log(`${requestIp} Connection closed`)
+      delete this.clients[requestIp]
+    })
+
+    var info = {
+      type: 'info',
+      data: {
+        completedRenames: this.completedRenames
+      }
+    }
+    res.write(`data: ${JSON.stringify(info)}\n\n`)
   }
 }
 module.exports = new Server()
