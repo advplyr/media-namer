@@ -46,6 +46,10 @@ class Renamer {
       var episode_title = req.body.episode_title
       var season = req.body.season
       var episode = req.body.episode
+      var fileVariant = req.body.variant
+      if (fileVariant) fileVariant = String(fileVariant).trim()
+      if (!fileVariant || !fileVariant.length) fileVariant = null
+
       if (!season || isNaN(season)) {
         return sendError('Invalid Season')
       }
@@ -55,7 +59,7 @@ class Renamer {
       season = Number(season)
       episode = Number(episode)
 
-      renameResult = await SeriesRenamer.rename(fileObj, this.OutputPath, title, episode_title, season, episode)
+      renameResult = await SeriesRenamer.rename(fileObj, this.OutputPath, title, episode_title, season, episode, fileVariant)
     } else if (media_type === 'books' || media_type === 'audiobooks') {
       var authors = req.body.authors
       if (!authors || typeof authors !== 'string') {

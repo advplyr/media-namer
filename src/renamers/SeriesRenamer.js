@@ -5,7 +5,7 @@ const { createDirectory, copyFile } = require('../utils/fileHelpers')
 class SeriesRenamer {
   constructor() { }
 
-  getNewTitle(fileObj, title) {
+  getNewTitle(fileObj, title, variant) {
     var { ext, filetype, basename } = fileObj
     var filename = title
 
@@ -19,6 +19,10 @@ class SeriesRenamer {
       }
     }
 
+    if (variant) {
+      filename += ` - [${variant}]`
+    }
+
     filename += '.' + ext
 
     return filename
@@ -26,25 +30,26 @@ class SeriesRenamer {
 
   getRenameArray(fileObj, options = {}) {
     var title = options.title
+    var variant = options.variant || null
 
     if (fileObj.dir) {
       return fileObj.children.map((child) => {
         return {
           path: child.path,
           basename: Path.basename(child.path),
-          newname: this.getNewTitle(child, title)
+          newname: this.getNewTitle(child, title, variant)
         }
       })
     } else {
       return [{
         path: fileObj.path,
         basename: Path.basename(fileObj.path),
-        newname: this.getNewTitle(fileObj, title)
+        newname: this.getNewTitle(fileObj, title, variant)
       }]
     }
   }
 
-  async rename(fileObj, outputPath, seriesTitle, episodeTitle, season, episode) {
+  async rename(fileObj, outputPath, seriesTitle, episodeTitle, season, episode, episodeVariant) {
     var seasonDirname = `Season ${String(season).padStart(2, '0')}`
     var title = `S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`
     if (episodeTitle) title += ' - ' + episodeTitle
@@ -55,7 +60,7 @@ class SeriesRenamer {
       return false
     }
 
-    var fileRenameArray = await this.getRenameArray(fileObj, { title })
+    var fileRenameArray = await this.getRenameArray(fileObj, { title, variant: episodeVariant })
 
     var filesFailed = []
     var filesSucceeded = []

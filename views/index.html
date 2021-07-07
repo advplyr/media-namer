@@ -220,6 +220,9 @@
         body.season = seasoninput.value
         var episodeinput = document.getElementById(`episode-${file_id}`)
         body.episode = episodeinput.value
+
+        var variantinput = document.getElementById(`variant-${file_id}`)
+        body.variant = variantinput.value
       } else if (mediatype === 'books' || mediatype === 'audiobooks') {
         var authorinput = document.getElementById(`authors-${file_id}`)
         body.authors = authorinput.value

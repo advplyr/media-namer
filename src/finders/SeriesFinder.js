@@ -49,12 +49,7 @@ class MovieFinder {
       mediaData.media.episode_title = episodeData.title
       mediaData.media.episode_poster = episodeData.image
       mediaData.media.episode_year = episodeData.year
-
-      var media_year = mediaData.media.year
-      if (media_year.includes('-')) {
-        media_year = media_year.split('-')[0]
-      }
-      mediaData.media.year = media_year
+      mediaData.media.year = mediaData.media.year
     }
 
     return mediaData

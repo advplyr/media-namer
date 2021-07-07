@@ -1,6 +1,22 @@
 const axios = require('axios')
 const OMDB_API_KEY = process.env.OMDB_API_KEY
 
+function cleanYear(year) {
+  if (!year) return null
+  if (year.includes('–') || year.includes('-')) {
+    return year.replace('–', '-').split('-')[0]
+  }
+  return year
+}
+
+function cleanTitle(title) {
+  if (!title) return null
+  if (title.includes(': ')) {
+    return title.replace(': ', ' - ')
+  }
+  return title
+}
+
 function searchOmdb(search, type, year) {
   var uri = null
   if (!year) {
@@ -13,12 +29,10 @@ function searchOmdb(search, type, year) {
     var data = res.data
     if (data.Error) return []
     return data.Search.map(i => {
-      var _title = i.Title
-
       return {
         id: i.imdbID,
-        title: _title,
-        year: i.Year,
+        title: cleanTitle(i.Title),
+        year: cleanYear(i.Year),
         image: (i.Poster && i.Poster !== 'N/A') ? i.Poster : null
       }
     })
@@ -35,8 +49,8 @@ function getEpisodeInfo(imdbId, season, episode) {
     var data = res.data
     if (data.Error) return null
     return {
-      'title': data.Title,
-      'year': data.Year,
+      'title': cleanTitle(data.Title),
+      'year': cleanYear(data.Year),
       'seriesID': data.seriesID,
       'episode': data.Episode,
       'season': data.Season,
@@ -55,8 +69,8 @@ function getImdbData(imdbId) {
     var data = res.data
     if (data.Error) return null
     return {
-      'title': data.Title,
-      'year': data.Year,
+      'title': cleanTitle(data.Title),
+      'year': cleanYear(data.Year),
       'id': data.imdbID,
       'image': (data.Poster && data.Poster !== 'N/A') ? data.Poster : null
     }

@@ -87,6 +87,8 @@ function buildLookupResponse(data, file_id) {
       box.appendChild(seasonContainer)
       var episodeContainer = buildInput(`episode-${file_id}`, 'Episode', data.media.episode)
       box.appendChild(episodeContainer)
+      var variantContainer = buildInput(`variant-${file_id}`, 'Variant')
+      box.appendChild(variantContainer)
     } else if (data.media_type === 'books' || data.media_type === 'audiobooks') {
       var titleContainer = buildInput(`newtitle-${file_id}`, 'Title', data.media.title)
       box.appendChild(titleContainer)
