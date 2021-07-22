@@ -33,6 +33,10 @@ class MovieFinder {
       media.episode_year = episodeData.year
 
       return { media }
+    } else if (!title) {
+      return {
+        error: 'Series not found'
+      }
     }
 
     var mediaData = await ImdbFinder.lookForMedia('series', title, year)
@@ -46,10 +50,18 @@ class MovieFinder {
 
     if (!mediaData.error) {
       var episodeData = await omdb.getEpisodeInfo(mediaData.media.id, season, episode)
-      mediaData.media.episode_title = episodeData.title
-      mediaData.media.episode_poster = episodeData.image
-      mediaData.media.episode_year = episodeData.year
-      mediaData.media.year = mediaData.media.year
+      if (!episodeData) {
+        console.error('Episode not found')
+        mediaData.media.episode_title = `Episode ${episode}`
+        mediaData.media.episode_poster = mediaData.media.image
+        mediaData.media.episode_year = mediaData.media.year
+        mediaData.media.year = mediaData.media.year
+      } else {
+        mediaData.media.episode_title = episodeData.title
+        mediaData.media.episode_poster = episodeData.image
+        mediaData.media.episode_year = episodeData.year
+        mediaData.media.year = mediaData.media.year
+      }
     }
 
     return mediaData

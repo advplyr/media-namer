@@ -49,8 +49,8 @@ class MovieRenamer {
     }
   }
 
-  async renameExisting(newDirectoryPath, fileTitle, existingFileVariant) {
-    var existingFiles = await mediascraper.scrapeExisting(newDirectoryPath)
+  async renameExisting(newDirectoryPath, fileTitle, existingFileVariant, mediaType) {
+    var existingFiles = await mediascraper.scrapeExisting(newDirectoryPath, mediaType)
     if (existingFiles.length) {
       console.log('Renaming existing files with variant', existingFiles)
       for (let i = 0; i < existingFiles.length; i++) {
@@ -89,7 +89,7 @@ class MovieRenamer {
     }
 
     if (existingFileVariant) {
-      await this.renameExisting(newDirectoryPath, fileTitle, existingFileVariant)
+      await this.renameExisting(newDirectoryPath, fileTitle, existingFileVariant, mediaType)
     }
 
 

@@ -3,9 +3,11 @@ var ptt = require('parse-torrent-title')
 var { prettyBytes, stringHash } = require('.')
 var { fetchMediaFilesRecursive, fetchTopLevelFiles } = require('./fileHelpers')
 
-async function scrapeExisting(path) {
-  var topLevelFiles = await fetchTopLevelFiles(path)
-  return topLevelFiles
+async function scrapeExisting(path, mediaType) {
+  var res = await fetchMediaFilesRecursive(path, mediaType)
+  if (!res) return []
+  return res.files
+  // return topLevelFiles
 }
 module.exports.scrapeExisting = scrapeExisting
 
